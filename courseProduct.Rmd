@@ -1,0 +1,90 @@
+---
+title: "Practical Machine Learning"
+subtitle: "predict the manner how the participant did the exercise"
+author: "Seungyoon Lee"
+date: "October 5, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Download and prepare the data
+
+The basic idea is only using the columns which are valid in pml-testing.csv.
+pml-testing.csv has multiple columns without meaningful values, such as NA or missing values, these columnes can't be used for prediction, so I will not use these for training or prediction. Hence the very first step is to download the data and clean it out to contain meaningful columns only. the columns picked up from pml-testing.csv will be applied to pml-training.csv to build up the models.
+
+```{r warning=FALSE, message=FALSE}
+if (!file.exists("data")) {
+    dir.create("data")
+    fileUrl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+    download.file(fileUrl, destfile="./data/pml-training.csv", method="curl")
+    fileUrl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+    download.file(fileUrl, destfile="./data/pml-testing.csv", method="curl")
+}
+
+pml_training <- read.csv("./data/pml-training.csv", header=TRUE)
+pml_testing <- read.csv("./data/pml-testing.csv", header=TRUE)
+```
+
+The data are downloaded. Now let's use Filter function to remove columns with NA from pml-testing.csv, that will left 60 columns to consider which also contain non-numeric columns such as participant names, time stamp. We know the prediction model won't be based on those, so I will remove them too, also the last column, problem_id, is the quiz #, so that's not for prediction as well. Therefore 8th column to 59th column are meaningful data for us. For training data set, add "classe" column into those to train the model.
+```{r warning=FALSE, message=FALSE}
+# discard columns which don't have any values
+pml_testing <- Filter(function(x)!all(is.na(x)), pml_testing)
+# also discard non-measured data such as name, timestamp and problem_id
+filtered_pml_testing <- pml_testing[,8:59]
+# add "classe" column to training set
+filtered_pml_training <- pml_training[,c(colnames(filtered_pml_testing), "classe")]
+```
+
+
+## Prepare training and validation data
+
+The canned data set is ready. Let's take filtered_pml_training data set which is derived from pml_training.csv, and use it going forward for training and validation. it's time to split them to training set - training (70%) and validation set - testing (30%).
+
+```{r warning=FALSE, message=FALSE}
+library(caret)
+inTrain <- createDataPartition(y=filtered_pml_training$classe, p=0.7, list=FALSE)
+training <- filtered_pml_training[inTrain,]
+testing <- filtered_pml_training[-inTrain,]
+```
+
+## Let's build few models
+
+I will try Random Forest (rf) and Generalized Boosted Regression (gbm)
+
+### Random Forest
+generate rf_model with Random Forest and run the prediction against training data set to see its accurary and sample error. Also validate that to testing data set which is still part of pml-trainig.csv to see its accuracy and the expected out of sample error. confusionMatrix function will be used to generate the outputs and overall statistics. the model will be built with resampling by 5 fold for cross-validation.
+```{r cache=TRUE, warning=FALSE, message=FALSE}
+fitControl <- trainControl(method="cv", number=5, allowParallel=T, verbose=T)
+rf_model <- train(classe ~ ., data=training, method="rf", trControl=fitControl, verbose=F)
+# run prediction on training data set to see its accurary & error rate
+rf_predict <- predict(rf_model, newdata=training)
+confusionMatrix(rf_predict, training$classe)
+# re-run prediction on validataion data set
+rf_predict <- predict(rf_model, newdata=testing)
+confusionMatrix(rf_predict, testing$classe)
+```
+
+### Generalized Boosted Regression
+generate gbm_model with Generalized Boosted Regression and run prediction and validation. same approach with above Random Forest case but just with different method.
+```{r cache=TRUE, warning=FALSE, message=FALSE}
+fitControl <- trainControl(method="cv", number=5, allowParallel=T, verbose=T)
+gbm_model <- train(classe ~ ., data=training, method="gbm", trControl=fitControl, verbose=F)
+# run prediction on training data set to see its accurary & error rate
+gbm_predict <- predict(gbm_model, newdata=training)
+confusionMatrix(gbm_predict, training$classe)
+# re-run prediction on validataion data set
+gbm_predict <- predict(gbm_model, newdata=testing)
+confusionMatrix(gbm_predict, testing$classe)
+```
+
+### Which does better? Random Forest
+
+based on validation result, it seems Random Forest model does better than Generalized Boosted Regression. So, let's stick with Random Forest and use rf_model to predict values, filtered_pml_testing, which is derived from pml-testing.csv.
+
+```{r warning=FALSE, message=FALSE}
+prediction <- predict(rf_model, newdata=filtered_pml_testing)
+as.data.frame(prediction)
+```
