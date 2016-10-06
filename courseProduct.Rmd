@@ -86,6 +86,10 @@ confusionMatrix(gbm_predict, testing$classe)
 rf_matrix <- confusionMatrix(rf_predict, testing$classe)
 gbm_matrix <- confusionMatrix(gbm_predict, testing$classe)
 ```
+
+Accuracy of Random Forest is `r rf_matrix$overall['Accuracy']`, the out of sample error is `r 1-rf_matrix$overall['Accuracy']`.
+
+Accuracy of Generalized Boosted Regression is `r gbm_matrix$overall['Accuracy']`, the out of sample error is `r 1-gbm_matrix$overall['Accuracy']`
 ```{r}
 # Accuracy of Random Forest
 rf_matrix$overall['Accuracy']
