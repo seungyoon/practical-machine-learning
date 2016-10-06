@@ -369,9 +369,17 @@ confusionMatrix(gbm_predict, testing$classe)</code></pre>
 ## Detection Prevalence   0.2856   0.1935   0.1833   0.1606   0.1769
 ## Balanced Accuracy      0.9879   0.9657   0.9703   0.9691   0.9765</code></pre>
 </div>
-<div id="which-does-better-random-forest" class="section level3">
-<h3>Which does better? Random Forest</h3>
-<p>based on validation result, it seems Random Forest model does better than Generalized Boosted Regression. So, let’s stick with Random Forest and use rf_model to predict values, filtered_pml_testing, which is derived from pml-testing.csv.</p>
+<div id="which-does-better---random-forest" class="section level3">
+<h3>Which does better? - Random Forest</h3>
+<pre class="r"><code># Accuracy of Random Forest
+rf_matrix$overall['Accuracy']</code></pre>
+<pre><code>##  Accuracy 
+## 0.9925234</code></pre>
+<pre class="r"><code># Accuracy of Generalized Boosted Regression
+gbm_matrix$overall['Accuracy']</code></pre>
+<pre><code>##  Accuracy 
+## 0.9604078</code></pre>
+<p>Based on validation result, it seems Random Forest model does better than Generalized Boosted Regression. So, let’s stick with Random Forest and use rf_model to predict values, filtered_pml_testing, which is derived from pml-testing.csv.</p>
 <pre class="r"><code>prediction &lt;- predict(rf_model, newdata=filtered_pml_testing)
 as.data.frame(prediction)</code></pre>
 <pre><code>##    prediction
