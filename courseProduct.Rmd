@@ -2,7 +2,7 @@
 title: "Practical Machine Learning"
 subtitle: "predict the manner how the participants did the exercise"
 author: "Seungyoon Lee"
-date: "October 5, 2016"
+date: "October 6, 2016"
 output: html_document
 ---
 
